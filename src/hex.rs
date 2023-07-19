@@ -18,7 +18,6 @@ use std::ops::Deref;
 //     [0, 1, -1],
 // ];
 
-
 pub const OFFSETS: [Cube; 6] = [
     Cube::from_arr([1, 0, -1]),
     Cube::from_arr([1, -1, 0]),
@@ -89,8 +88,6 @@ impl From<Cube> for [i16; 3] {
         [q, r, s]
     }
 }
-
-
 
 impl Cube {
     pub const fn from_arr([q, r, s]: [i16; 3]) -> Self {
@@ -225,7 +222,6 @@ impl Cube {
     }
 }
 
-
 //TODO make sure this matches OFFETS
 #[derive(Copy, Clone)]
 pub enum Dir {
@@ -237,10 +233,25 @@ pub enum Dir {
     RightDown = 5,
 }
 
+impl From<u8> for Dir {
+    fn from(a: u8) -> Dir {
+        use Dir::*;
+        match a {
+            0 => LeftUp,
+            1 => RightUp,
+            2 => Left,
+            3 => Right,
+            4 => LeftDown,
+            5 => RightDown,
+            _ => panic!("Failed to parse {} to a Dir", a),
+        }
+    }
+}
+
 #[derive(Copy, Clone)]
 pub enum Wiggle {
-    Left,
-    Right,
+    Left = 0,
+    Right = 1,
 }
 
 #[derive(Copy, Clone)]
@@ -250,7 +261,14 @@ pub struct HexMoveVector {
 }
 
 impl HexMoveVector {
-    pub fn new(a: Cube, wiggle: Wiggle) -> Self {
-        todo!()
+    pub fn new(b: Cube, wiggle: Wiggle) -> Self {
+        let offset = (0..)
+            .zip(OFFSETS.iter())
+            .find(|(_, a)| a.eq(&b))
+            .expect("vector was not a unit hex vector");
+
+        let dir = Dir::from(offset.0);
+
+        HexMoveVector { dir, wiggle }
     }
 }

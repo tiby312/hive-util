@@ -1,14 +1,16 @@
 pub mod hex;
+pub mod substrate;
 use hex::Coord;
 
 use crate::hex::Cube;
+use substrate::Substrate;
 
 pub struct Team {
     ants: [Coord; 3],
     spiders: [Coord; 2],
 }
 
-impl Substrate for &'_ Team {
+impl substrate::Substrate for &'_ Team {
     fn contains(&self, coord: &Coord) -> bool {
         self.ants.contains(coord) || self.spiders.contains(coord)
     }
@@ -20,56 +22,6 @@ impl Team {
             .iter()
             .copied()
             .chain(self.spiders.iter().copied())
-    }
-}
-
-pub trait Substrate {
-    fn contains(&self, coord: &Coord) -> bool;
-    fn chain<S: Substrate>(self, s: S) -> Chain<Self, S>
-    where
-        Self: Sized,
-    {
-        Chain { a: self, b: s }
-    }
-
-    fn slideable_adjacent(&self, curr: hex::Cube) -> std::vec::IntoIter<hex::HexMoveVector> {
-        //TODO dont return Vec
-        curr.adjacent()
-            .filter_map(|this| {
-                if self.contains(&this) {
-                    return None;
-                }
-
-                let offset = this.sub(curr);
-
-                let rr_vec = offset.rotate_60_right();
-                let ll_vec = offset.rotate_60_left();
-                let rr = this.add(rr_vec);
-                let ll = this.add(ll_vec);
-
-                let wiggle = if !self.contains(&ll) {
-                    hex::Wiggle::Right
-                } else if !self.contains(&rr) {
-                    hex::Wiggle::Left
-                } else {
-                    //There is a gate we can't slide through.
-                    return None;
-                };
-
-                Some(hex::HexMoveVector::new(offset, wiggle))
-            })
-            .collect::<Vec<_>>()
-            .into_iter()
-    }
-}
-
-pub struct Chain<A, B> {
-    a: A,
-    b: B,
-}
-impl<A: Substrate, B: Substrate> Substrate for Chain<A, B> {
-    fn contains(&self, coord: &Coord) -> bool {
-        self.a.contains(coord) || self.b.contains(coord)
     }
 }
 
@@ -106,7 +58,7 @@ impl<'a> View<'a> {
         let mut stack = vec![];
 
         let c = self.a_team.ants[ant_index];
-        stack.push((Cube::from(c), vec![]));
+        stack.push((Cube::from(c), smallvec::smallvec![]));
 
         let substrate = self.a_team.chain(self.b_team);
 
@@ -124,7 +76,7 @@ impl<'a> View<'a> {
                     path: path.clone(),
                 });
             }
-            for a in substrate.slideable_adjacent(coord) {
+            for a in substrate.slideable_adjacent().build(coord) {
                 let mut mm = path.clone();
                 mm.push(a);
                 stack.push((coord.with(a.dir), mm));
@@ -141,7 +93,7 @@ pub struct Dests {
     //TODO optimize this
     // 3 u64s would be able to fit 64 path moves.
     // One movement takes up 3 bits of space. just need 2^3 values.
-    path: Vec<hex::HexMoveVector>,
+    path: smallvec::SmallVec<[hex::HexMoveVector; 16]>,
 }
 impl Dests {
     pub fn get_dest(&self) -> Coord {
@@ -151,3 +103,15 @@ impl Dests {
         self.path.iter().copied()
     }
 }
+
+// pub struct Path{
+//     inner:[u64;3],
+//     length:u8
+// }
+// impl Path{
+//     pub fn add(&mut self,h:hex::HexMoveVector){
+//         let dir=h.dir as u8;
+//         let wiggle=h.wiggle as u8;
+
+//     }
+// }
