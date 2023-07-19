@@ -228,3 +228,9 @@ pub struct HexMoveVector {
     pub dir: Dir,
     pub wiggle: Wiggle,
 }
+
+impl HexMoveVector {
+    pub fn new(a: Cube, wiggle: Wiggle) -> Self {
+        todo!()
+    }
+}

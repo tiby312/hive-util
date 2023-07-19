@@ -29,13 +29,16 @@ pub trait Substrate {
         Chain { a: self, b: s }
     }
 
-    fn slideable_adjacent(&self, c: Coord) -> std::array::IntoIter<hex::HexMoveVector, 6> {
+    fn slideable_adjacent(&self, c: Coord) -> std::vec::IntoIter<hex::HexMoveVector> {
         let curr = hex::Cube::from_axial(c);
-        //let f=hex::OFFSETS.map(|a|hex::Cube(a));
         let c = Cube::from(c);
         //TODO dont return Vec
         c.adjacent()
-            .filter(|this| {
+            .filter_map(|this| {
+                if self.contains(&this) {
+                    return None;
+                }
+
                 let offset = this.sub(curr);
 
                 let rr_vec = offset.rotate_60_right();
@@ -43,19 +46,19 @@ pub trait Substrate {
                 let rr = this.add(rr_vec);
                 let ll = this.add(ll_vec);
 
-                if !self.contains(&ll_vec.to_axial()) {}
-                //check a is empty
+                let wiggle = if !self.contains(&ll) {
+                    hex::Wiggle::Right
+                } else if !self.contains(&rr) {
+                    hex::Wiggle::Left
+                } else {
+                    //There is a gate we can't slide through.
+                    return None;
+                };
 
-                //check a is adjacent to a bug
-
-                //check if left of c,a clear
-
-                //check if right of c,a clear
-                true
+                Some(hex::HexMoveVector::new(offset, wiggle))
             })
             .collect::<Vec<_>>()
-            .into_iter();
-        todo!()
+            .into_iter()
     }
 }
 
