@@ -9,13 +9,23 @@ use std::ops::Deref;
 //     [-1, 1, 0],
 // ];
 
-pub const OFFSETS: [[i16; 3]; 6] = [
-    [1, 0, -1],
-    [1, -1, 0],
-    [0, -1, 1],
-    [-1, 0, 1],
-    [-1, 1, 0],
-    [0, 1, -1],
+// pub const OFFSETS: [[i16; 3]; 6] = [
+//     [1, 0, -1],
+//     [1, -1, 0],
+//     [0, -1, 1],
+//     [-1, 0, 1],
+//     [-1, 1, 0],
+//     [0, 1, -1],
+// ];
+
+
+pub const OFFSETS: [Cube; 6] = [
+    Cube::from_arr([1, 0, -1]),
+    Cube::from_arr([1, -1, 0]),
+    Cube::from_arr([0, -1, 1]),
+    Cube::from_arr([-1, 0, 1]),
+    Cube::from_arr([-1, 1, 0]),
+    Cube::from_arr([0, 1, -1]),
 ];
 
 pub(crate) const SQRT_3: f32 = 1.73205080757;
@@ -80,13 +90,15 @@ impl From<Cube> for [i16; 3] {
     }
 }
 
+
+
 impl Cube {
-    // pub fn from_arr([q, r, s]: [i16; 3]) -> Self {
-    //     Cube {
-    //         coord: Coord { q, r },
-    //         s,
-    //     }
-    // }
+    pub const fn from_arr([q, r, s]: [i16; 3]) -> Self {
+        Cube {
+            coord: Coord { q, r },
+            s,
+        }
+    }
     pub fn into_arr(self) -> [i16; 3] {
         self.into()
     }
@@ -95,12 +107,11 @@ impl Cube {
     // }
     pub fn adjacent(&self) -> impl Iterator<Item = Cube> {
         let k = *self;
-        OFFSETS.iter().map(move |a| k.add(Cube::from(*a)))
+        OFFSETS.iter().map(move |&a| k.add(a))
     }
     pub fn with(&self, a: Dir) -> Cube {
         let k = a as u8;
-        let j = Cube::from(OFFSETS[k as usize]);
-        self.add(j)
+        self.add(OFFSETS[k as usize])
     }
 
     pub fn from_axial(a: Coord) -> Self {
@@ -135,7 +146,7 @@ impl Cube {
         self.add(Cube::direction(dir))
     }
     pub fn direction(dir: i16) -> Cube {
-        Cube::from(OFFSETS[dir as usize])
+        OFFSETS[dir as usize]
     }
     pub fn add(self, other: Cube) -> Cube {
         let q = self.coord.q + other.coord.q;
@@ -198,8 +209,8 @@ impl Cube {
     pub fn neighbours(&self) -> impl Iterator<Item = Cube> {
         let k = self.into_arr().clone();
         OFFSETS.iter().map(move |a| {
-            let mut a = a.clone();
-            for (a, b) in a.iter_mut().zip(k.iter()) {
+            let a = a.clone();
+            for (a, b) in a.into_arr().iter_mut().zip(k.iter()) {
                 *a += b;
             }
             Cube::from(a)
