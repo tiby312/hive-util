@@ -15,8 +15,11 @@ impl Substrate for &'_ Team {
 }
 
 impl Team {
-    pub fn get_used_grids(&self) -> impl Iterator<Item = Coord> {
-        [Coord { q: 0, r: 0 }; 0].into_iter()
+    pub fn get_used_grids(&self) -> impl Iterator<Item = Coord> + '_ {
+        self.ants
+            .iter()
+            .copied()
+            .chain(self.spiders.iter().copied())
     }
 }
 
@@ -29,11 +32,9 @@ pub trait Substrate {
         Chain { a: self, b: s }
     }
 
-    fn slideable_adjacent(&self, c: Coord) -> std::vec::IntoIter<hex::HexMoveVector> {
-        let curr = hex::Cube::from_axial(c);
-        let c = Cube::from(c);
+    fn slideable_adjacent(&self, curr: hex::Cube) -> std::vec::IntoIter<hex::HexMoveVector> {
         //TODO dont return Vec
-        c.adjacent()
+        curr.adjacent()
             .filter_map(|this| {
                 if self.contains(&this) {
                     return None;
@@ -123,7 +124,7 @@ impl<'a> View<'a> {
                     path: path.clone(),
                 });
             }
-            for a in substrate.slideable_adjacent(*coord) {
+            for a in substrate.slideable_adjacent(coord) {
                 let mut mm = path.clone();
                 mm.push(a);
                 stack.push((coord.with(a.dir), mm));

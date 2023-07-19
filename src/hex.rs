@@ -60,8 +60,11 @@ impl From<Coord> for Cube {
 }
 
 impl From<[i16; 3]> for Cube {
-    fn from(a: [i16; 3]) -> Self {
-        Cube::from_arr(a)
+    fn from([q, r, s]: [i16; 3]) -> Self {
+        Cube {
+            coord: Coord { q, r },
+            s,
+        }
     }
 }
 
@@ -76,30 +79,32 @@ impl From<Cube> for [i16; 3] {
 }
 
 impl Cube {
-    pub fn from_arr([q, r, s]: [i16; 3]) -> Self {
-        Cube {
-            coord: Coord { q, r },
-            s,
-        }
-    }
+    // pub fn from_arr([q, r, s]: [i16; 3]) -> Self {
+    //     Cube {
+    //         coord: Coord { q, r },
+    //         s,
+    //     }
+    // }
     pub fn into_arr(self) -> [i16; 3] {
         self.into()
     }
-    pub fn new(q: i16, r: i16) -> Self {
-        Cube::from_arr([q, r, -q - r])
-    }
+    // pub fn new(q: i16, r: i16) -> Self {
+    //     Cube::from([q, r, -q - r])
+    // }
     pub fn adjacent(&self) -> impl Iterator<Item = Cube> {
         let k = *self;
-        OFFSETS.iter().map(move |a| k.add(Cube::from_arr(*a)))
+        OFFSETS.iter().map(move |a| k.add(Cube::from(*a)))
     }
     pub fn with(&self, a: Dir) -> Cube {
         let k = a as u8;
-        let j = Cube::from_arr(OFFSETS[k as usize]);
+        let j = Cube::from(OFFSETS[k as usize]);
         self.add(j)
     }
 
     pub fn from_axial(a: Coord) -> Self {
-        Cube::new(a.q, a.r)
+        let q = a.q;
+        let r = a.r;
+        Cube::from([q, r, -q - r])
     }
     pub fn round(frac: [f32; 3]) -> Cube {
         let mut q = frac[0].round() as i16;
@@ -117,7 +122,7 @@ impl Cube {
         } else {
             s = -q - r
         }
-        return Cube::from_arr([q, r, s]);
+        return Cube::from([q, r, s]);
     }
 
     pub fn to_axial(&self) -> Coord {
@@ -128,19 +133,19 @@ impl Cube {
         self.add(Cube::direction(dir))
     }
     pub fn direction(dir: i16) -> Cube {
-        Cube::from_arr(OFFSETS[dir as usize])
+        Cube::from(OFFSETS[dir as usize])
     }
-    pub fn add(mut self, other: Cube) -> Cube {
+    pub fn add(self, other: Cube) -> Cube {
         let q = self.coord.q + other.coord.q;
         let r = self.coord.r + other.coord.r;
         let s = self.s + other.s;
-        Cube::from_arr([q, r, s])
+        Cube::from([q, r, s])
     }
-    pub fn sub(mut self, other: Cube) -> Cube {
+    pub fn sub(self, other: Cube) -> Cube {
         let q = self.coord.q - other.coord.q;
         let r = self.coord.r + -other.coord.r;
         let s = self.s - other.s;
-        Cube::from_arr([q, r, s])
+        Cube::from([q, r, s])
     }
 
     // pub fn rays(&self, start: i16, end: i16, ff: impl Filter + Copy) -> impl Iterator<Item = Cube> {
@@ -167,16 +172,16 @@ impl Cube {
 
     pub fn rotate_60_right(self) -> Cube {
         let [q, r, s] = self.into_arr();
-        Cube::from_arr([s, q, r])
+        Cube::from([s, q, r])
     }
     pub fn rotate_60_left(self) -> Cube {
         let [q, r, s] = self.into_arr();
-        Cube::from_arr([r, s, q])
+        Cube::from([r, s, q])
     }
 
     pub fn scale(self, n: i16) -> Cube {
         let a = self.into_arr();
-        Cube::from_arr(a.map(|a| a * n))
+        Cube::from(a.map(|a| a * n))
     }
 
     pub fn range(&self, n: i16) -> impl Iterator<Item = Cube> {
@@ -185,7 +190,7 @@ impl Cube {
             .flat_map(move |q| ((-n).max(-q - n)..n.min(-q + n) + 1).map(move |r| (q, r)))
             .map(move |(q, r)| {
                 let s = -q - r;
-                o.add(Cube::from_arr([q, r, s]))
+                o.add(Cube::from([q, r, s]))
             })
     }
     pub fn neighbours(&self) -> impl Iterator<Item = Cube> {
@@ -195,7 +200,7 @@ impl Cube {
             for (a, b) in a.iter_mut().zip(k.iter()) {
                 *a += b;
             }
-            Cube::from_arr(a)
+            Cube::from(a)
         })
     }
 
