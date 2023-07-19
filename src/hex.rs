@@ -35,7 +35,7 @@ pub struct Coord {
 }
 
 //q r s
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Cube {
     coord: Coord,
     s: i16,
